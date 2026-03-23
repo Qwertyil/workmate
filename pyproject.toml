@@ -1,0 +1,38 @@
+[project]
+name = "workmate-coffee-consumption-report"
+version = "0.1.0"
+description = "Coffee consumption report for Workmate test assignment"
+authors = [
+    {name = "Amir",email = "zamnatov2004@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "tabulate (>=0.10.0,<0.11.0)"
+]
+
+[tool.poetry]
+packages = [{ include = "coffee_reports" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0.2,<10.0.0"
+pytest-cov = ">=7.0.0,<8.0.0"
+ruff = ">=0.15.7,<0.16.0"
+mypy = ">=1.19.1,<2.0.0"
+types-tabulate = ">=0.9.0.20241207,<0.10.0.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=coffee_reports --cov-report=term-missing --cov-fail-under=80"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
