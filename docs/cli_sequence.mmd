@@ -1,0 +1,37 @@
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+  autonumber
+  participant C as Client (shell)
+  participant M as main / cli
+  participant R as reports (registry)
+  participant L as loader
+  participant FS as CSV files (disk)
+  participant B as report builder
+  participant V as renderer (tabulate)
+  participant OUT as stdout
+  participant ERR as stderr
+
+  C->>M: argv: --files … --report …
+  M->>M: argparse (validate choices)
+  M->>R: get_report_builder(name)
+  R-->>M: build_* callable
+  M->>L: load_records(file_paths)
+  loop each path
+    L->>FS: open CSV, read rows
+    FS-->>L: raw rows
+    L->>L: build StudyRecord list
+  end
+  L-->>M: list[StudyRecord]
+  M->>B: builder(records)
+  B-->>M: ReportTable
+  M->>V: render_report_table(table)
+  V-->>M: formatted str (grid)
+  M->>OUT: print(report)
+  OUT-->>C: terminal output
+
+  opt FileReadError (missing or unreadable file)
+    L-->>M: raise FileReadError
+    M->>ERR: print(error)
+    ERR-->>C: error message
+    M-->>C: exit code 1
+  end

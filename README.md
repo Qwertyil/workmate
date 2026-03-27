@@ -10,3 +10,13 @@ poetry run python main.py --files examples/math.csv examples/physics.csv example
 ```
 
 В проекте логика отчётов отделена от CLI, поэтому новые отчёты можно добавлять через реестр в `coffee_reports/reports/registry.py`. Основной функционал и ключевые error-сценарии покрыты тестами на `pytest`.
+
+---
+
+<details>
+<summary>Диаграмма последовательности вызовов CLI</summary>
+
+![Sequence diagram (dark theme): client → cli → loader, registry, report builder, renderer → stdout](docs/cli_sequence.png)
+
+
+</details>
