@@ -1,5 +1,6 @@
-import csv
 from pathlib import Path
+from collections.abc import Callable
+from typing import Protocol
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -7,27 +8,30 @@ from _pytest.capture import CaptureFixture
 from coffee_reports.cli import main
 
 
-CSV_HEADER = [
-    "student",
-    "date",
-    "coffee_spent",
-    "sleep_hours",
-    "study_hours",
-    "mood",
-    "exam",
-]
+class CliArgsBuilder(Protocol):
+    def __call__(
+        self,
+        file_paths: list[Path],
+        report: str = "median-coffee",
+    ) -> list[str]: ...
 
 
-def write_csv(path: Path, rows: list[list[str]]) -> None:
-    with path.open("w", encoding="utf-8", newline="") as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(CSV_HEADER)
-        writer.writerows(rows)
+@pytest.fixture
+def build_cli_args() -> CliArgsBuilder:
+    def _build_cli_args(
+        file_paths: list[Path],
+        report: str = "median-coffee",
+    ) -> list[str]:
+        return ["--files", *(str(path) for path in file_paths), "--report", report]
+
+    return _build_cli_args
 
 
 def test_main_returns_zero_and_prints_report_table(
     tmp_path: Path,
     capsys: CaptureFixture[str],
+    write_csv: Callable[[Path, list[list[object]]], None],
+    build_cli_args: CliArgsBuilder,
 ) -> None:
     math_file = tmp_path / "math.csv"
     physics_file = tmp_path / "physics.csv"
@@ -46,15 +50,7 @@ def test_main_returns_zero_and_prints_report_table(
         ],
     )
 
-    exit_code = main(
-        [
-            "--files",
-            str(math_file),
-            str(physics_file),
-            "--report",
-            "median-coffee",
-        ]
-    )
+    exit_code = main(build_cli_args([math_file, physics_file]))
     captured = capsys.readouterr()
 
     assert exit_code == 0
@@ -68,6 +64,8 @@ def test_main_returns_zero_and_prints_report_table(
 def test_main_exits_for_unknown_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],
+    write_csv: Callable[[Path, list[list[object]]], None],
+    build_cli_args: CliArgsBuilder,
 ) -> None:
     file_path = tmp_path / "math.csv"
     write_csv(
@@ -78,14 +76,7 @@ def test_main_exits_for_unknown_report(
     )
 
     with pytest.raises(SystemExit) as error:
-        main(
-            [
-                "--files",
-                str(file_path),
-                "--report",
-                "average-coffee",
-            ]
-        )
+        main(build_cli_args([file_path], report="average-coffee"))
     captured = capsys.readouterr()
 
     assert error.value.code == 2
@@ -97,17 +88,11 @@ def test_main_exits_for_unknown_report(
 def test_main_returns_error_for_missing_file(
     capsys: CaptureFixture[str],
     tmp_path: Path,
+    build_cli_args: CliArgsBuilder,
 ) -> None:
     missing_file = tmp_path / "missing.csv"
 
-    exit_code = main(
-        [
-            "--files",
-            str(missing_file),
-            "--report",
-            "median-coffee",
-        ]
-    )
+    exit_code = main(build_cli_args([missing_file]))
     captured = capsys.readouterr()
 
     assert exit_code == 1
