@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 
+import pytest
 from _pytest.capture import CaptureFixture
 
 from coffee_reports.cli import main
@@ -64,7 +65,7 @@ def test_main_returns_zero_and_prints_report_table(
     assert captured.err == ""
 
 
-def test_main_returns_error_for_unknown_report(
+def test_main_exits_for_unknown_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],
 ) -> None:
@@ -76,19 +77,20 @@ def test_main_returns_error_for_unknown_report(
         ],
     )
 
-    exit_code = main(
-        [
-            "--files",
-            str(file_path),
-            "--report",
-            "average-coffee",
-        ]
-    )
+    with pytest.raises(SystemExit) as error:
+        main(
+            [
+                "--files",
+                str(file_path),
+                "--report",
+                "average-coffee",
+            ]
+        )
     captured = capsys.readouterr()
 
-    assert exit_code == 1
+    assert error.value.code == 2
     assert captured.out == ""
-    assert "Unknown report: average-coffee" in captured.err
+    assert "invalid choice: 'average-coffee'" in captured.err
     assert "median-coffee" in captured.err
 
 
