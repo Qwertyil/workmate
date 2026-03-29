@@ -34,6 +34,16 @@ def load_records_from_file(file_path: str | Path) -> list[StudyRecord]:
         raise FileReadError(path, "file is not readable") from error
     except IsADirectoryError as error:
         raise FileReadError(path, "expected a file, got a directory") from error
+    except UnicodeDecodeError as error:
+        raise FileReadError(path, "expected file in utf-8") from error
+    except csv.Error as error:
+        raise FileReadError(path, "expected csv file") from error
+    except ValueError as error:
+        raise FileReadError(path, "expected valid values in row") from error
+    except KeyError as error:
+        raise FileReadError(path, "expected valid row") from error
+    except TypeError as error:
+        raise FileReadError(path, "expected valid row") from error
 
 
 def build_study_record(row: Mapping[str, str]) -> StudyRecord:
